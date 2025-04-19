@@ -69,8 +69,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    SpechilizationId = table.Column<int>(type: "int", nullable: false),
-                    specializationId = table.Column<int>(type: "int", nullable: true),
+                    SpecializationId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     MobilePhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -81,36 +80,9 @@ namespace MedicalAppointmentBookingSystem.Migrations
                 {
                     table.PrimaryKey("PK_Doctors", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Doctors_Specializations_specializationId",
-                        column: x => x.specializationId,
+                        name: "FK_Doctors_Specializations_SpecializationId",
+                        column: x => x.SpecializationId,
                         principalTable: "Specializations",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Appointment",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    appointmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    patientId = table.Column<int>(type: "int", nullable: false),
-                    DoctorId = table.Column<int>(type: "int", nullable: false),
-                    status = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Appointment", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Appointment_Doctors_DoctorId",
-                        column: x => x.DoctorId,
-                        principalTable: "Doctors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Appointment_Patients_patientId",
-                        column: x => x.patientId,
-                        principalTable: "Patients",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -123,8 +95,9 @@ namespace MedicalAppointmentBookingSystem.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DocId = table.Column<int>(type: "int", nullable: false),
                     Day = table.Column<int>(type: "int", nullable: false),
-                    AvailableStartAT = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    AvailableEndAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    AvailableStartAT = table.Column<TimeSpan>(type: "time", nullable: false),
+                    AvailableEndAt = table.Column<TimeSpan>(type: "time", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -155,18 +128,87 @@ namespace MedicalAppointmentBookingSystem.Migrations
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TimeSlots",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AvailableId = table.Column<int>(type: "int", nullable: false),
+                    DoctorId = table.Column<int>(type: "int", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TimeSlots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TimeSlots_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                    table.ForeignKey(
+                        name: "FK_TimeSlots_doctorAvailabilities_AvailableId",
+                        column: x => x.AvailableId,
+                        principalTable: "doctorAvailabilities",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Appointments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SlotId = table.Column<int>(type: "int", nullable: false),
+                    patientId = table.Column<int>(type: "int", nullable: false),
+                    DoctorId = table.Column<int>(type: "int", nullable: false),
+                    status = table.Column<int>(type: "int", nullable: false),
+                    dateTime = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Appointments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Patients_patientId",
+                        column: x => x.patientId,
+                        principalTable: "Patients",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
+                    table.ForeignKey(
+                        name: "FK_Appointments_TimeSlots_SlotId",
+                        column: x => x.SlotId,
+                        principalTable: "TimeSlots",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.NoAction);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Appointment_DoctorId",
-                table: "Appointment",
+                name: "IX_Appointments_DoctorId",
+                table: "Appointments",
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Appointment_patientId",
-                table: "Appointment",
+                name: "IX_Appointments_patientId",
+                table: "Appointments",
                 column: "patientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_SlotId",
+                table: "Appointments",
+                column: "SlotId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_doctorAvailabilities_DocId",
@@ -179,24 +221,31 @@ namespace MedicalAppointmentBookingSystem.Migrations
                 column: "DoctorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Doctors_specializationId",
+                name: "IX_Doctors_SpecializationId",
                 table: "Doctors",
-                column: "specializationId");
+                column: "SpecializationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PatientNotifications_PatientId",
                 table: "PatientNotifications",
                 column: "PatientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeSlots_AvailableId",
+                table: "TimeSlots",
+                column: "AvailableId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TimeSlots_DoctorId",
+                table: "TimeSlots",
+                column: "DoctorId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Appointment");
-
-            migrationBuilder.DropTable(
-                name: "doctorAvailabilities");
+                name: "Appointments");
 
             migrationBuilder.DropTable(
                 name: "DoctorNotifications");
@@ -205,10 +254,16 @@ namespace MedicalAppointmentBookingSystem.Migrations
                 name: "PatientNotifications");
 
             migrationBuilder.DropTable(
-                name: "Doctors");
+                name: "TimeSlots");
 
             migrationBuilder.DropTable(
                 name: "Patients");
+
+            migrationBuilder.DropTable(
+                name: "doctorAvailabilities");
+
+            migrationBuilder.DropTable(
+                name: "Doctors");
 
             migrationBuilder.DropTable(
                 name: "Specializations");

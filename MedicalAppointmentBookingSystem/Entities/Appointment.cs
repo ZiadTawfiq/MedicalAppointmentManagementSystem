@@ -20,6 +20,9 @@ namespace MedicalAppointmentBookingSystem.Entities
 
         public Status status { get; set; }
 
+        public DateTime dateTime { get; set; }
+
+
 
 
 

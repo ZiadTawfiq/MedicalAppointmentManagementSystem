@@ -14,9 +14,9 @@ namespace MedicalAppointmentBookingSystem.Entities
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DayOfWeek Day { get; set; }
 
-        public DateTime AvailableStartAT { get; set; }
+        public TimeSpan AvailableStartAT { get; set; }
 
-        public DateTime AvailableEndAt { get; set;  }
+        public TimeSpan AvailableEndAt { get; set;  }
 
         public bool IsAvailable { get; set; }
 

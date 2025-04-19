@@ -6,6 +6,7 @@ using MedicalAppointmentBookingSystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace MedicalAppointmentBookingSystem
@@ -23,13 +24,24 @@ namespace MedicalAppointmentBookingSystem
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 
             });
-
+            builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<IloginRepository, LoginRepository>(); 
             builder.Services.AddScoped<IDoctorRepository,DoctorRepository>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<IPatientRepository,PatientRepository>();
-            builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>(); 
+            builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            builder.Services.AddScoped<DoctorService>();
+            builder.Services.AddScoped<AppointmentService>();
+            builder.Services.AddScoped<PatientService>();
+            builder.Services.AddScoped<NotificationService>();
+            builder.Services.AddScoped<LoginService>();
 
-
+            builder.Services.AddScoped(
+                provider =>
+                {
+                    return new TokenService(jwtOptions);
+                }
+              ); 
 
 
             builder.Services.AddAuthentication().AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -39,16 +51,16 @@ namespace MedicalAppointmentBookingSystem
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = jwtOptions?.issuer,
+                    ValidIssuer = jwtOptions?.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = jwtOptions?.audience,
+                    ValidAudience = jwtOptions?.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.signingkey))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Signingkey))
 
                 };
             });
-
+           
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -61,10 +73,12 @@ namespace MedicalAppointmentBookingSystem
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseAuthentication();
+            
+            app.UseAuthorization();
+           
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
 
 
             app.MapControllers();

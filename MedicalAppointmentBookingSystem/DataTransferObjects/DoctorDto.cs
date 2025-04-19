@@ -14,16 +14,11 @@ namespace MedicalAppointmentBookingSystem.DataTransferObjects
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public Role role { get; set; }
 
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public DayOfWeek day { get; set; }
-
-        public IEnumerable<DoctorAvailability>Availabilities { get; set;  }
-
         public string MobilePhone { get; set; }
 
         public string password { get; set; }
 
-        public int  specializationId { get; set; }
+        public int  SpecializationId { get; set; }
 
 
     }

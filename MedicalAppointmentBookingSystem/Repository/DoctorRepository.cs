@@ -2,6 +2,7 @@
 using MedicalAppointmentBookingSystem.DataTransferObjects;
 using MedicalAppointmentBookingSystem.Entities;
 using MedicalAppointmentBookingSystem.Security;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointmentBookingSystem.Repository
@@ -23,7 +24,7 @@ namespace MedicalAppointmentBookingSystem.Repository
                 Name = dto.Name,
                 HashPassword = Hashing.HashPassword(dto.password),
                 role = dto.role,
-                SpechilizationId = dto.specializationId,
+                SpecializationId = dto.SpecializationId,
                 
             };
             _context.Doctors.Add(doctor);
@@ -43,36 +44,45 @@ namespace MedicalAppointmentBookingSystem.Repository
             await _context.SaveChangesAsync();
         }
 
-        public async Task DetectAvailableDays_Hours( int id , List<DoctorAvailability> availabilities)
+        public async Task<string> DetectAvailableDays_Hours( int id , DoctorAvailabilityDto availabilitie)
         {
             var doctor = await _context.Doctors.Include(_ => _.DoctorAvailabilities).FirstOrDefaultAsync(_ => _.Id == id);
 
             if (doctor == null)
             {
-                return; 
+                return "Doctor not found!";
             }
 
-            doctor.DoctorAvailabilities ??= new List<DoctorAvailability>(); // if it is null create new instance
+            
+            bool IsDublicate =  doctor.DoctorAvailabilities.Any(_ => _.Day == availabilitie.Day && _.AvailableStartAT == availabilitie.AvailableStartAT
+                  && _.AvailableEndAt == availabilitie.AvailableEndAt
+                );
+            
+            bool IsOverlapping = doctor.DoctorAvailabilities.Any(_ => _.Day == availabilitie.Day &&
+                 availabilitie.AvailableStartAT < _.AvailableEndAt  && availabilitie.AvailableEndAt > _.AvailableStartAT
+                );
 
-            foreach (var item in availabilities)
+            
+            if (IsDublicate)
             {
-                bool IsDublicate =  doctor.DoctorAvailabilities.Any(_ => _.Day == item.Day && _.AvailableStartAT == item.AvailableStartAT
-                  && _.AvailableEndAt == item.AvailableEndAt
-                );
-                bool IsOverlapping = _context.doctorAvailabilities.Any(_ => _.Day == item.Day &&
-                 item.AvailableStartAT < _.AvailableEndAt  && item.AvailableEndAt > _.AvailableStartAT
-                );
-
-                if (!IsDublicate && !IsOverlapping)
-                {
-                    item.IsAvailable = true;
-                    doctor.DoctorAvailabilities.Add(item);
-                }
-
+                return "IsDublicate!";
             }
+            if (IsOverlapping)
+            {
+                return "Overlapping";
+            }
+            var availability = new DoctorAvailability()
+            {
+                Day = availabilitie.Day,
+                AvailableStartAT = availabilitie.AvailableStartAT,
+                AvailableEndAt = availabilitie.AvailableEndAt,
+                DocId = id,
+                IsAvailable = true
+            };
+            doctor.DoctorAvailabilities.Add(availability);
             await _context.SaveChangesAsync();
-
-
+            await GenerateTimeSlots(id, availability.Id, 40);
+            return "Availability Added Succefully";
         }
 
 
@@ -88,7 +98,7 @@ namespace MedicalAppointmentBookingSystem.Repository
 
             if (doctor == null)
             {
-                return null;
+                return new Doctor();
             }
             return doctor;
         }
@@ -101,35 +111,43 @@ namespace MedicalAppointmentBookingSystem.Repository
             {
                 return "Not Found";
             }
-            doctor.SpechilizationId = dto.specializationId;
+            doctor.SpecializationId= dto.SpecializationId;
             doctor.Email = dto.Email;
             
 
             return "Updated Succefully";
         }
 
-        public async Task<List<DoctorAvailability>> DisplayAvailableHours_days(int id) 
+        public async Task<List<DoctorAvailability>> DisplayAvailableHours_days(int docid) 
         {
-            var Doctor = await _context.Doctors.Include(_ => _.DoctorAvailabilities).FirstOrDefaultAsync(_ => _.Id == id);
+            var Doctor = await _context.Doctors.Include(_ => _.DoctorAvailabilities).ThenInclude(_=>_.TimeSlots).FirstOrDefaultAsync(_ => _.Id == docid);
 
-            foreach (var item in Doctor.DoctorAvailabilities)
+            if (Doctor == null)
             {
-                if (!item.IsAvailable)
-                {
-                    Doctor.DoctorAvailabilities.Remove(item); 
-                }
+                return new List<DoctorAvailability>();
             }
-            
-            return Doctor?.DoctorAvailabilities.ToList()?? new List<DoctorAvailability>();
+
+            return  Doctor.DoctorAvailabilities.Where(_ => _.IsAvailable).ToList(); 
             
         }
 
-        public async Task<string> Update_Availability(int doctorId, int DoctorAvailId, DoctorAvailability doctorAvailability)
+        public async Task<string> Update_Availability(int doctorId, int DoctorAvailId, DoctorAvailabilityDto doctorAvailability)
         {
-            var patient = await _context.Doctors.Include(_ => _.DoctorAvailabilities).FirstOrDefaultAsync(_ => _.Id == doctorId);
-            var Available = patient.DoctorAvailabilities.FirstOrDefault(_ => _.Id == DoctorAvailId);
+            var doctor = await _context.Doctors.Include(_ => _.DoctorAvailabilities).FirstOrDefaultAsync(_ => _.Id == doctorId);
+            
+            if (doctor == null)
+            {
+                return "Doctor not found!";
+            } 
 
-            bool IsDublicate = patient.DoctorAvailabilities.Any(_ => _.Day == doctorAvailability.Day && _.AvailableStartAT == doctorAvailability.AvailableStartAT
+            var Available = doctor.DoctorAvailabilities.FirstOrDefault(_ => _.Id == DoctorAvailId);
+
+            if (Available == null)
+            {
+                return "Availabl null"; 
+            }
+
+            bool IsDublicate = doctor.DoctorAvailabilities.Any(_ => _.Day == doctorAvailability.Day && _.AvailableStartAT == doctorAvailability.AvailableStartAT
                  && _.AvailableEndAt == doctorAvailability.AvailableEndAt
                );
             bool IsOverlapping = _context.doctorAvailabilities.Any(_ => _.Day == doctorAvailability.Day &&
@@ -142,11 +160,66 @@ namespace MedicalAppointmentBookingSystem.Repository
                 Available.AvailableStartAT = doctorAvailability.AvailableStartAT;
                 Available.AvailableEndAt = doctorAvailability.AvailableEndAt;
                 Available.IsAvailable = true;
+                _context.TimeSlots.RemoveRange(Available.TimeSlots);
+                await GenerateTimeSlots(doctorId,Available.Id, 20);
+                await _context.SaveChangesAsync();
                 return "Updated Succefully.";
+
             }
             return "sorry ! overlapping or duplicate Avaialabl hours"; 
            
 
+        }
+
+        public async Task GenerateTimeSlots(int docId,int doctorAvailabilityId, int slotDurationMinutes)
+        {
+            var availability = await _context.doctorAvailabilities.Include(_ => _.TimeSlots).FirstOrDefaultAsync
+                 (_ => _.Id == doctorAvailabilityId);
+            if (availability == null)
+            {
+                throw new Exception("Doctor Availability not Found!");
+            }
+            var Period = availability.AvailableEndAt - availability.AvailableStartAT;
+
+            int tolalMinutes = (int)(Period.TotalMinutes);
+
+            int Slots = tolalMinutes / slotDurationMinutes;
+
+            for (int i = 0; i < Slots; i++)
+            {
+                TimeSpan SlotStart  = availability.AvailableStartAT + TimeSpan.FromMinutes(i * slotDurationMinutes);
+                TimeSpan SlotEnd = SlotStart+ TimeSpan.FromMinutes(slotDurationMinutes);
+
+                bool slotExists = await _context.TimeSlots
+                .AnyAsync(ts => ts.AvailableId == doctorAvailabilityId &&
+                           ts.StartTime == SlotStart &&
+                           ts.EndTime == SlotEnd);
+
+                if (!slotExists)
+                {
+                    var slot = new TimeSlot()
+                    {
+                        StartTime = SlotStart,
+                        EndTime = SlotEnd,
+                        IsAvailable = true , 
+                        AvailableId = availability.Id ,
+                        DoctorId = docId
+                    };
+                    availability.TimeSlots.Add(slot);
+                }
+
+            }
+            await _context.SaveChangesAsync();
+
+
+        }
+
+        public async IAsyncEnumerable<TimeSlot>GetAvailableTimeSlots(int doctorId, TimeSpan Time , DayOfWeek day)
+        {
+            var timeSlots = _context.TimeSlots.Include(_ => _.DoctorAvailability).Where(_ => _.DoctorAvailability.DocId == doctorId && _.DoctorAvailability.Day == day && _.StartTime== Time && _.IsAvailable == true
+            );
+            await foreach (var slot in timeSlots.AsAsyncEnumerable())
+                yield return slot;
         }
     }
 

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedicalAppointmentBookingSystem.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250321140319_Migration000")]
+    [Migration("20250418062416_Migration000")]
     partial class Migration000
     {
         /// <inheritdoc />
@@ -36,7 +36,10 @@ namespace MedicalAppointmentBookingSystem.Migrations
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("appointmentDate")
+                    b.Property<int>("SlotId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("dateTime")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("patientId")
@@ -49,9 +52,11 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("DoctorId");
 
+                    b.HasIndex("SlotId");
+
                     b.HasIndex("patientId");
 
-                    b.ToTable("Appointment");
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Doctor", b =>
@@ -78,18 +83,15 @@ namespace MedicalAppointmentBookingSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("SpechilizationId")
+                    b.Property<int>("SpecializationId")
                         .HasColumnType("int");
 
                     b.Property<int>("role")
                         .HasColumnType("int");
 
-                    b.Property<int?>("specializationId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("specializationId");
+                    b.HasIndex("SpecializationId");
 
                     b.ToTable("Doctors");
                 });
@@ -102,17 +104,20 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("AvailableEndAt")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("AvailableEndAt")
+                        .HasColumnType("time");
 
-                    b.Property<DateTime>("AvailableStartAT")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("AvailableStartAT")
+                        .HasColumnType("time");
 
                     b.Property<int>("Day")
                         .HasColumnType("int");
 
                     b.Property<int>("DocId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -223,6 +228,38 @@ namespace MedicalAppointmentBookingSystem.Migrations
                     b.ToTable("Specializations");
                 });
 
+            modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.TimeSlot", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AvailableId");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("TimeSlots");
+                });
+
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Appointment", b =>
                 {
                     b.HasOne("MedicalAppointmentBookingSystem.Entities.Doctor", "doctor")
@@ -231,11 +268,19 @@ namespace MedicalAppointmentBookingSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("MedicalAppointmentBookingSystem.Entities.TimeSlot", "TimeSlot")
+                        .WithMany()
+                        .HasForeignKey("SlotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("MedicalAppointmentBookingSystem.Entities.Patient", "patient")
                         .WithMany("appointments")
                         .HasForeignKey("patientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("TimeSlot");
 
                     b.Navigation("doctor");
 
@@ -246,7 +291,9 @@ namespace MedicalAppointmentBookingSystem.Migrations
                 {
                     b.HasOne("MedicalAppointmentBookingSystem.Entities.Specialization", "specialization")
                         .WithMany("Doctors")
-                        .HasForeignKey("specializationId");
+                        .HasForeignKey("SpecializationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("specialization");
                 });
@@ -254,7 +301,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.DoctorAvailability", b =>
                 {
                     b.HasOne("MedicalAppointmentBookingSystem.Entities.Doctor", "Doctor")
-                        .WithMany()
+                        .WithMany("DoctorAvailabilities")
                         .HasForeignKey("DocId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -264,27 +311,59 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.DoctorNotification", b =>
                 {
-                    b.HasOne("MedicalAppointmentBookingSystem.Entities.Doctor", null)
+                    b.HasOne("MedicalAppointmentBookingSystem.Entities.Doctor", "doctor")
                         .WithMany("Notifications")
                         .HasForeignKey("DoctorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("doctor");
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.PatientNotification", b =>
                 {
-                    b.HasOne("MedicalAppointmentBookingSystem.Entities.Patient", null)
+                    b.HasOne("MedicalAppointmentBookingSystem.Entities.Patient", "patient")
                         .WithMany("Notifications")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("patient");
+                });
+
+            modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.TimeSlot", b =>
+                {
+                    b.HasOne("MedicalAppointmentBookingSystem.Entities.DoctorAvailability", "DoctorAvailability")
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("AvailableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointmentBookingSystem.Entities.Doctor", "Doctor")
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("DoctorAvailability");
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Doctor", b =>
                 {
+                    b.Navigation("DoctorAvailabilities");
+
                     b.Navigation("Notifications");
 
+                    b.Navigation("TimeSlots");
+
                     b.Navigation("appointments");
+                });
+
+            modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.DoctorAvailability", b =>
+                {
+                    b.Navigation("TimeSlots");
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Patient", b =>

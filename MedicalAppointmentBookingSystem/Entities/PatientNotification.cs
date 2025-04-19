@@ -8,6 +8,7 @@ namespace MedicalAppointmentBookingSystem.Entities
 
         [ForeignKey("Patient")]
         public int PatientId { get; set; }
+        public Patient ?patient { get; set; }
 
         public string Message { get; set; }
 

@@ -17,15 +17,15 @@ namespace MedicalAppointmentBookingSystem.Repository
 
         IAsyncEnumerable<Doctor> GetAllDoctors();
 
-        Task DetectAvailableDays_Hours(int id , List<DoctorAvailability>doctorAvailabilities);
+        Task<string> DetectAvailableDays_Hours(int id ,DoctorAvailabilityDto doctorAvailabilitie);
 
         Task<List<DoctorAvailability>>DisplayAvailableHours_days(int id);
 
-        Task<string> Update_Availability(int doctorId, int DoctorAvailId, DoctorAvailability doctorAvailability);
+        Task<string> Update_Availability(int doctorId, int DoctorAvailId, DoctorAvailabilityDto dto);
        
-        Task GenerateTimeSlots(int doctorAvailabilityId, int slotDurationMinutes);
-        
-        Task<List<TimeSlot>> GetAvailableTimeSlots(int doctorId, DateTime date); 
+        Task GenerateTimeSlots(int Docid,int doctorAvailabilityId, int slotDurationMinutes);
+
+        IAsyncEnumerable<TimeSlot> GetAvailableTimeSlots(int doctorId, TimeSpan time , DayOfWeek day); 
 
 
 

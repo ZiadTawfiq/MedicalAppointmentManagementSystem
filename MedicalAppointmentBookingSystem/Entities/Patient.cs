@@ -10,9 +10,6 @@ namespace MedicalAppointmentBookingSystem.Entities
 
         public List<PatientNotification>? Notifications { get; set; }
 
-        public static implicit operator Task<object>(Patient v)
-        {
-            throw new NotImplementedException();
-        }
+      
     }
 }
