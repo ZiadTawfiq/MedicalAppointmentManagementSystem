@@ -53,7 +53,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("patientId");
 
-                    b.ToTable("Appointments");
+                    b.ToTable("Appointments", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Doctor", b =>
@@ -90,7 +90,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("SpecializationId");
 
-                    b.ToTable("Doctors");
+                    b.ToTable("Doctors", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.DoctorAvailability", b =>
@@ -120,7 +120,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("DocId");
 
-                    b.ToTable("doctorAvailabilities");
+                    b.ToTable("doctorAvailabilities", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.DoctorNotification", b =>
@@ -145,7 +145,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("DoctorNotifications");
+                    b.ToTable("DoctorNotifications", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Patient", b =>
@@ -180,7 +180,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Patients");
+                    b.ToTable("Patients", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.PatientNotification", b =>
@@ -205,7 +205,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PatientNotifications");
+                    b.ToTable("PatientNotifications", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Specialization", b =>
@@ -222,7 +222,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Specializations");
+                    b.ToTable("Specializations", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.TimeSlot", b =>
@@ -254,7 +254,7 @@ namespace MedicalAppointmentBookingSystem.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("TimeSlots");
+                    b.ToTable("TimeSlots", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointmentBookingSystem.Entities.Appointment", b =>

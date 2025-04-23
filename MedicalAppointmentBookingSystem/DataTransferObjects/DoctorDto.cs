@@ -18,6 +18,8 @@ namespace MedicalAppointmentBookingSystem.DataTransferObjects
 
         public string password { get; set; }
 
+        public string ConfirmPassword { get; set; }
+
         public int  SpecializationId { get; set; }
 
 

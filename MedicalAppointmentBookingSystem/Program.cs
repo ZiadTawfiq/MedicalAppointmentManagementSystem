@@ -6,8 +6,12 @@ using MedicalAppointmentBookingSystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
+using MedicalAppointmentBookingSystem.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore; // Add this using directive
+
+
 
 namespace MedicalAppointmentBookingSystem
 {
@@ -60,11 +64,14 @@ namespace MedicalAppointmentBookingSystem
 
                 };
             });
-           
+
 
             builder.Services.AddControllers();
+           
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddFluentValidationAutoValidation(); 
+            builder.Services.AddValidatorsFromAssemblyContaining<DoctorValidator>(); 
 
             var app = builder.Build();
 
